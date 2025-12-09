@@ -92,7 +92,7 @@ class Skim
   end
 
   def height
-    data.size
+    @height ||= data.size
   end
 
   def empty?
@@ -285,6 +285,29 @@ class Skim
       end
     end
     self
+  end
+
+  def draw_line(x0, y0, x1, y1, v)
+    raise ArgumentError, "diagonal lines not supported" unless x0 == x1 || y0 == y1
+    draw_rect_from_corners(x0, y0, x1, y1, v)
+  end
+
+  def draw_rect_from_corners(x0, y0, x1, y1, v)
+    draw_rect(*self.class.transform_corners(x0, y0, x1, y1), v)
+  end
+
+  def self.transform_corners(x0, y0, x1, y1)
+    xv = [x0, x1].sort
+    yv = [y0, y1].sort
+    [xv.first, yv.first, xv.last - xv.first + 1, yv.last - yv.first + 1]
+  end
+
+  def draw_rect(x0, y0, w, h, v)
+    (x0...x0+w).each do |x|
+      (y0...y0+h).each do |y|
+        self[x, y] = v
+      end
+    end
   end
 
   def flood_fill!(x, y, val)
