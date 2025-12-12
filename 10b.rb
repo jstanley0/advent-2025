@@ -4,6 +4,10 @@
 # is wasting an insane amount of time exploring every possible order. it got the right
 # answer on the first two of 176 problems in the real input but never completed
 # any others. I'm leaving it here for curiosity's sake
+#
+# programming update: after perusing the AoC subreddit I realized the above note
+# is absolutely wrong; the button pressing order for part 1 doesn't matter either,
+# and part 1 is in fact part 2 but with modulo-2 counters!
 
 require_relative 'search'
 
