@@ -82,8 +82,6 @@ class Skim
 
   def self.from_concise_string(str, sep: '/')
     Skim.new.tap { |s| s.data = str.split(sep).map(&:chars) }
-    
-    s
   end
 
   # width of the given row (if initialized with +rec+ then all rows are the same width)
