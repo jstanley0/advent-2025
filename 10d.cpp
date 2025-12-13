@@ -8,7 +8,9 @@
 #include <string>
 #include <sstream>
 #include <bit>
+#include <ranges>
 #include <map>
+#include <unordered_map>
 
 using namespace std;
 
@@ -16,7 +18,9 @@ class Machine {
   int light_count, light_mask = 0;
   vector<int> target;
   vector<int> buttons;
-  
+  unordered_map<int, vector<unsigned int>> parity_cache;
+  map<vector<int>, int> target_cache;
+
 public:
   explicit Machine(const string &line) {
     istringstream ss(line);
@@ -54,40 +58,41 @@ public:
   }
 
   int solve_lights() {
-    vector<unsigned long> scratch;
-    return solve_lights(light_mask, scratch);
+    auto combos = solve_lights(light_mask);
+    auto it = ranges::min_element(combos, {}, [](auto x) { return popcount(x); });
+    return popcount(*it);
   }
 
   int solve_jolts() {
-    map<vector<int>, int> memo;
-    return solve_jolts(target, memo);
+    return solve_jolts(target);
   }
 
 private:
-  int solve_lights(int target, vector<unsigned long> &combos) {
-    int best = numeric_limits<int>::max();
-    unsigned long iters = 1 << buttons.size();
-    for(unsigned long i = 0; i < iters; ++i) {
+  vector<unsigned int> solve_lights(int target) {
+    if (auto it = parity_cache.find(target); it != parity_cache.end())
+      return it->second;
+
+    vector<unsigned int> combos;
+    unsigned int iters = 1 << buttons.size();
+    for(unsigned int i = 0; i < iters; ++i) {
       int scratch = 0;
       for(int b = 0; b < buttons.size(); ++b) {
         if (i & (1 << b))
           scratch ^= buttons[b];
       }
       if (scratch == target) {
-        int n = popcount(i);
-        if (n < best)
-          best = n;
         combos.push_back(i);
       }
     }
-    return best;
+    parity_cache[target] = combos;
+    return combos;
   }
 
-  int solve_jolts(const vector<int> &target, map<vector<int>, int> &memo) {
+  int solve_jolts(const vector<int> &target) {
     if (*max_element(target.begin(), target.end()) == 0) {
       return 0;
     }
-    if (auto it = memo.find(target); it != memo.end()) {
+    if (auto it = target_cache.find(target); it != target_cache.end()) {
       return it->second;
     }
 
@@ -95,8 +100,7 @@ private:
     for(int i = 0; i < target.size(); ++i) {
       parity |= (target[i] & 1) << i;
     }
-    vector<unsigned long> combos;
-    solve_lights(parity, combos);
+    auto combos = solve_lights(parity);
 
     vector<int> subtarget(target.size());
     int best = numeric_limits<int>::max();
@@ -121,7 +125,7 @@ private:
         if (i & 1) throw "parity error";
         i >>= 1;
       }
-      int subscore = solve_jolts(subtarget, memo);
+      int subscore = solve_jolts(subtarget);
       if (subscore == numeric_limits<int>::max())
         continue;
 
@@ -130,7 +134,7 @@ private:
         best = score;
     }
 
-    memo[target] = best;
+    target_cache[target] = best;
     return best;
   }
 };
